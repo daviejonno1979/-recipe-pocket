@@ -72,6 +72,12 @@
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .actions{display:flex;gap:10px;margin-top:18px}
     .actions>*{flex:1}
+    .import-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .import-btn{border:0;background:var(--green);color:#fff;border-radius:14px;padding:12px 14px;font-weight:800;white-space:nowrap}
+    .import-btn:disabled{opacity:.6;cursor:wait}
+    .import-status{font-size:13px;line-height:1.4;color:var(--muted);margin-top:7px;min-height:18px}
+    .import-status.ok{color:var(--green);font-weight:700}
+    .import-status.error{color:#a33d31;font-weight:700}
     .detail-top{display:flex;gap:14px;align-items:flex-start}
     .detail-img{width:92px;height:92px;border-radius:20px;background:#ffe6d8;display:grid;place-items:center;font-size:42px;background-size:cover;background-position:center;flex:none}
     .detail-title{font-size:24px;font-weight:900;line-height:1.08;margin:4px 0 7px}
@@ -135,7 +141,9 @@
     <form id="recipeForm">
       <input type="hidden" id="recipeId" />
       <label>Recipe name *</label><input id="title" type="text" required placeholder="e.g. Chicken fajitas" />
-      <label>Source website</label><input id="sourceUrl" type="url" placeholder="Paste the recipe link" />
+      <label>Import from website</label>
+      <div class="import-row"><input id="sourceUrl" type="url" placeholder="Paste the recipe link" /><button class="import-btn" id="importUrlBtn" type="button">Import</button></div>
+      <div class="import-status" id="importStatus">Paste a recipe page link, then tap Import.</div>
       <div class="row">
         <div><label>Category</label><input id="category" type="text" placeholder="Dinner, Baking…" /></div>
         <div><label>Servings</label><input id="servings" type="number" min="1" step="1" value="4" /></div>
@@ -156,6 +164,7 @@
 <script>
 const DB_KEY='recipePocket_v1';
 const SHOP_KEY='recipePocket_shop_v1';
+const IMPORTER_KEY='recipePocket_importer_url_v1';
 let recipes=JSON.parse(localStorage.getItem(DB_KEY)||'[]');
 let shopping=JSON.parse(localStorage.getItem(SHOP_KEY)||'[]');
 let currentView='recipes';
@@ -209,12 +218,43 @@ function openForm(id=''){
   $('#formTitle').textContent=r?'Edit recipe':'Add recipe';
   $('#recipeId').value=r?.id||'';
   $('#title').value=r?.title||'';$('#sourceUrl').value=r?.sourceUrl||'';$('#category').value=r?.category||'';$('#servings').value=r?.servings||4;$('#imageUrl').value=r?.imageUrl||'';$('#ingredients').value=(r?.ingredients||[]).join('\n');$('#method').value=(r?.method||[]).join('\n');$('#notes').value=r?.notes||'';
+  const st=$('#importStatus');st.textContent=r?'Paste a different recipe link and tap Import to refresh the fields.':'Paste a recipe page link, then tap Import.';st.className='import-status';
   $('#recipeModal').classList.add('open');setTimeout(()=>$('#title').focus(),100);
 }
 function closeModal(id){$('#'+id).classList.remove('open')}
 
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
 $('#addBtn').onclick=()=>openForm();
+
+function importerUrl(){return (localStorage.getItem(IMPORTER_KEY)||'').trim().replace(/\/+$/,'')}
+function setImportStatus(message,type=''){const el=$('#importStatus');el.textContent=message;el.className='import-status'+(type?' '+type:'')}
+async function importRecipeFromUrl(){
+  const target=$('#sourceUrl').value.trim();
+  if(!target){setImportStatus('Paste a recipe webpage address first.','error');$('#sourceUrl').focus();return}
+  try{new URL(target)}catch{setImportStatus('That does not look like a valid web address.','error');return}
+  const endpoint=importerUrl();
+  if(!endpoint){setImportStatus('One-time setup needed: open Settings and add your Recipe Importer service URL.','error');return}
+  const btn=$('#importUrlBtn');const old=btn.textContent;btn.disabled=true;btn.textContent='Importing…';setImportStatus('Reading the recipe page…');
+  try{
+    const join=endpoint.includes('?')?'&':'?';
+    const res=await fetch(endpoint+join+'url='+encodeURIComponent(target),{headers:{'Accept':'application/json'}});
+    let data={};try{data=await res.json()}catch{}
+    if(!res.ok)throw new Error(data.error||('Importer returned '+res.status));
+    if(!data.recipe)throw new Error('No recipe data was returned.');
+    const r=data.recipe;
+    if(r.title)$('#title').value=r.title;
+    if(r.imageUrl)$('#imageUrl').value=r.imageUrl;
+    if(r.category)$('#category').value=r.category;
+    if(r.servings)$('#servings').value=r.servings;
+    if(Array.isArray(r.ingredients)&&r.ingredients.length)$('#ingredients').value=r.ingredients.join('\n');
+    if(Array.isArray(r.method)&&r.method.length)$('#method').value=r.method.join('\n');
+    const ic=(r.ingredients||[]).length, sc=(r.method||[]).length;
+    setImportStatus(`Imported ${ic} ingredient${ic===1?'':'s'} and ${sc} step${sc===1?'':'s'}. Check the details, then tap Save recipe.`,'ok');
+  }catch(err){
+    setImportStatus(err.message||'The recipe could not be imported. You can still enter it manually.','error');
+  }finally{btn.disabled=false;btn.textContent=old}
+}
+$('#importUrlBtn').addEventListener('click',importRecipeFromUrl);
 $('#recipeForm').addEventListener('submit',e=>{
   e.preventDefault();const id=$('#recipeId').value;
   const data={id:id||uid(),title:$('#title').value.trim(),sourceUrl:$('#sourceUrl').value.trim(),category:$('#category').value.trim(),servings:Number($('#servings').value)||1,imageUrl:$('#imageUrl').value.trim(),ingredients:$('#ingredients').value.split('\n').map(x=>x.trim()).filter(Boolean),method:$('#method').value.split('\n').map(x=>x.trim()).filter(Boolean),notes:$('#notes').value.trim(),favourite:recipes.find(r=>r.id===id)?.favourite||false,createdAt:recipes.find(r=>r.id===id)?.createdAt||Date.now(),updatedAt:Date.now()};
@@ -260,11 +300,22 @@ function clearDone(){shopping=shopping.filter(x=>!x.done);save();renderShopping(
 function clearAllShop(){if(confirm('Clear the whole shopping list?')){shopping=[];save();renderShopping()}}
 
 function renderSettings(){
+  const endpoint=importerUrl();
   view.innerHTML=`<div class="section-title">Settings</div>
+  <div class="settings-card"><h3>🌐 Recipe Importer ${endpoint?'✅':''}</h3><p>Automatic importing uses a tiny Cloudflare Worker. Paste its <strong>workers.dev</strong> address here once and Recipe Pocket will remember it on this device.</p><label>Importer service URL</label><input id="importerServiceUrl" type="url" value="${esc(endpoint)}" placeholder="https://recipe-pocket-importer.your-name.workers.dev"><div class="settings-actions"><button class="secondary" onclick="saveImporterUrl()">Save URL</button><button class="secondary" onclick="testImporter()">Test importer</button></div><div class="import-status" id="importerTestStatus">${endpoint?'Configured on this device.':'Not configured yet.'}</div></div>
   <div class="settings-card"><h3>📲 Add to your iPhone Home Screen</h3><p>Open this site in Safari, tap Share, then choose <strong>Add to Home Screen</strong>. It will launch full-screen like an app.</p></div>
-  <div class="settings-card"><h3>🌐 Saving a recipe from a website</h3><p>For this first version, paste the recipe link into “Source website” and copy the ingredients and method into the app. A later version can add automatic webpage importing with a small server component.</p></div>
   <div class="settings-card"><h3>💾 Backup your recipes</h3><p>Your recipes are stored on this device in your browser. Export a backup occasionally so you can restore them on another device.</p><div class="settings-actions"><button class="secondary" onclick="exportData()">Export backup</button><button class="secondary" onclick="$('#importFile').click()">Import backup</button></div></div>
-  <div class="settings-card"><h3>🧹 Reset app</h3><p>Deletes all recipes and shopping-list items from this browser.</p><div class="settings-actions"><button class="secondary" onclick="resetAll()">Delete all data</button></div></div>`;
+  <div class="settings-card"><h3>🧹 Reset app</h3><p>Deletes all recipes and shopping-list items from this browser. Your importer URL is left in place.</p><div class="settings-actions"><button class="secondary" onclick="resetAll()">Delete all recipe data</button></div></div>`;
+}
+function saveImporterUrl(){
+  const input=$('#importerServiceUrl');let url=input.value.trim().replace(/\/+$/,'');
+  if(url){try{const u=new URL(url);if(u.protocol!=='https:')throw new Error()}catch{const s=$('#importerTestStatus');s.textContent='Use the full https:// address from Cloudflare.';s.className='import-status error';return false}}
+  localStorage.setItem(IMPORTER_KEY,url);const s=$('#importerTestStatus');s.textContent=url?'Saved.':'Importer URL cleared.';s.className='import-status ok';return true;
+}
+async function testImporter(){
+  if(!saveImporterUrl())return;const endpoint=importerUrl(),s=$('#importerTestStatus');if(!endpoint)return;
+  s.textContent='Testing…';s.className='import-status';
+  try{const join=endpoint.includes('?')?'&':'?';const r=await fetch(endpoint+join+'health=1');const d=await r.json();if(!r.ok||!d.ok)throw new Error();s.textContent='Connected successfully. Automatic recipe importing is ready.';s.className='import-status ok'}catch{s.textContent='Could not connect. Check the Worker URL and that it has been deployed.';s.className='import-status error'}
 }
 function exportData(){const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),recipes,shopping},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='recipe-pocket-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 $('#importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.recipes))throw new Error();recipes=d.recipes;shopping=Array.isArray(d.shopping)?d.shopping:[];save();render();showToast('Backup imported')}catch{alert('That backup file could not be read.')}e.target.value=''});
