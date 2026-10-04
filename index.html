@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fffaf3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Recipe Pocket" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Recipe Pocket</title>
+  <style>
+    :root {
+      --bg:#fffaf3;
+      --card:#ffffff;
+      --text:#27221e;
+      --muted:#766d65;
+      --accent:#d86734;
+      --accent-soft:#ffeadf;
+      --line:#eadfd6;
+      --green:#557a5a;
+      --shadow:0 8px 26px rgba(86,62,45,.09);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+    body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,250,243,.92);backdrop-filter:blur(14px);padding:calc(16px + env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid rgba(234,223,214,.8)}
+    .toprow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:42px;height:42px;border-radius:14px;background:var(--accent-soft);display:grid;place-items:center;font-size:24px}
+    h1{font-size:25px;margin:0;letter-spacing:-.5px}
+    .sub{color:var(--muted);font-size:13px;margin-top:2px}
+    .icon-btn,.small-btn{border:0;background:var(--card);box-shadow:var(--shadow);border-radius:14px;color:var(--text)}
+    .icon-btn{width:44px;height:44px;font-size:25px}
+    .toolbar{padding:14px 18px 6px;display:flex;gap:10px;align-items:center}
+    .search{flex:1;background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px;outline:none}
+    .filter{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 10px;max-width:140px}
+    .main{padding:10px 18px 26px}
+    .section-title{font-size:15px;font-weight:700;margin:8px 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);position:relative}
+    .thumb{height:130px;background:linear-gradient(135deg,#ffe2cf,#fff2e8);display:grid;place-items:center;font-size:50px;background-size:cover;background-position:center}
+    .card-body{padding:13px}
+    .card-title{font-size:16px;font-weight:800;line-height:1.2;margin:0 0 6px}
+    .meta{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap}
+    .pill{background:#f8f1eb;padding:4px 7px;border-radius:999px}
+    .fav{position:absolute;right:9px;top:9px;width:34px;height:34px;border:0;border-radius:999px;background:rgba(255,255,255,.9);font-size:19px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .empty{text-align:center;padding:54px 24px 32px;color:var(--muted)}
+    .empty .big{font-size:54px;margin-bottom:10px}
+    .empty h2{color:var(--text);margin:6px 0 8px}
+    .primary{border:0;background:var(--accent);color:white;border-radius:16px;padding:13px 16px;font-weight:800;box-shadow:0 8px 18px rgba(216,103,52,.25)}
+    .secondary{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:16px;padding:12px 14px;font-weight:700}
+    .bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(760px,100%);z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr)}
+    .nav-btn{border:0;background:transparent;padding:5px 2px;color:var(--muted);font-size:11px;font-weight:700}
+    .nav-btn span{display:block;font-size:22px;margin-bottom:2px}
+    .nav-btn.active{color:var(--accent)}
+    .modal{position:fixed;inset:0;background:rgba(40,31,24,.35);z-index:60;display:none;align-items:flex-end;justify-content:center}
+    .modal.open{display:flex}
+    .sheet{width:min(760px,100%);max-height:94vh;background:var(--bg);border-radius:28px 28px 0 0;overflow:auto;padding:14px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.16)}
+    .grab{width:48px;height:5px;border-radius:999px;background:#d8cec6;margin:2px auto 14px}
+    .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .sheet h2{margin:0;font-size:23px}
+    .close{border:0;background:#eee5de;border-radius:999px;width:36px;height:36px;font-size:18px}
+    label{display:block;font-size:13px;color:var(--muted);font-weight:700;margin:14px 0 6px}
+    input[type=text],input[type=url],input[type=number],textarea,select.form{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;outline:none;color:var(--text)}
+    textarea{min-height:120px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .actions{display:flex;gap:10px;margin-top:18px}
+    .actions>*{flex:1}
+    .detail-top{display:flex;gap:14px;align-items:flex-start}
+    .detail-img{width:92px;height:92px;border-radius:20px;background:#ffe6d8;display:grid;place-items:center;font-size:42px;background-size:cover;background-position:center;flex:none}
+    .detail-title{font-size:24px;font-weight:900;line-height:1.08;margin:4px 0 7px}
+    .link{color:var(--accent);text-decoration:none;font-weight:700;font-size:13px}
+    .detail-section{margin-top:22px}
+    .detail-section h3{margin:0 0 10px;font-size:18px}
+    .ingredient{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:10px 12px;margin-bottom:8px}
+    .ingredient input{margin-top:3px;transform:scale(1.2)}
+    .ingredient.checked .ing-text{text-decoration:line-through;color:#9c938c}
+    .ing-text{flex:1;line-height:1.35}
+    .ing-add{border:0;background:#f3eee8;border-radius:10px;width:30px;height:30px;font-size:18px}
+    .step{display:flex;gap:10px;margin:0 0 12px;line-height:1.45}
+    .step-no{width:28px;height:28px;min-width:28px;border-radius:999px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:900;font-size:13px}
+    .detail-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .small-btn{padding:9px 11px;font-size:13px;border:1px solid var(--line);box-shadow:none;font-weight:700}
+    .servings{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+    .servings button{border:1px solid var(--line);background:#fff;border-radius:10px;width:32px;height:32px}
+    .shop-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:8px}
+    .shop-item.done span{text-decoration:line-through;color:#9c938c}
+    .shop-item span{flex:1}
+    .shop-item button{border:0;background:transparent;font-size:18px}
+    .settings-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px}
+    .settings-card h3{margin:0 0 7px;font-size:17px}
+    .settings-card p{margin:0;color:var(--muted);line-height:1.4;font-size:14px}
+    .settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .file-input{display:none}
+    .toast{position:fixed;left:50%;bottom:105px;transform:translateX(-50%) translateY(20px);background:#29231f;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:100;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.thumb{height:118px}.row{grid-template-columns:1fr}.toolbar{padding-top:11px}}
+    @media(max-width:360px){.grid{grid-template-columns:1fr}.thumb{height:160px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="toprow">
+      <div class="brand"><div class="logo">🍲</div><div><h1>Recipe Pocket</h1><div class="sub">Your recipes, without the clutter.</div></div></div>
+      <button class="icon-btn" id="addBtn" aria-label="Add recipe">＋</button>
+    </div>
+  </header>
+
+  <div class="toolbar" id="recipeToolbar">
+    <input class="search" id="searchInput" type="search" placeholder="Search recipes…" />
+    <select class="filter" id="categoryFilter"><option value="">All</option></select>
+  </div>
+
+  <main class="main" id="view"></main>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-view="recipes"><span>📖</span>Recipes</button>
+  <button class="nav-btn" data-view="favourites"><span>♥️</span>Favourites</button>
+  <button class="nav-btn" data-view="shopping"><span>🛒</span>Shopping</button>
+  <button class="nav-btn" data-view="settings"><span>⚙️</span>Settings</button>
+</nav>
+
+<div class="modal" id="recipeModal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 id="formTitle">Add recipe</h2><button class="close" data-close="recipeModal">✕</button></div>
+    <form id="recipeForm">
+      <input type="hidden" id="recipeId" />
+      <label>Recipe name *</label><input id="title" type="text" required placeholder="e.g. Chicken fajitas" />
+      <label>Source website</label><input id="sourceUrl" type="url" placeholder="Paste the recipe link" />
+      <div class="row">
+        <div><label>Category</label><input id="category" type="text" placeholder="Dinner, Baking…" /></div>
+        <div><label>Servings</label><input id="servings" type="number" min="1" step="1" value="4" /></div>
+      </div>
+      <label>Photo URL</label><input id="imageUrl" type="url" placeholder="Optional image link" />
+      <label>Ingredients</label><textarea id="ingredients" placeholder="One ingredient per line&#10;2 chicken breasts&#10;1 red pepper&#10;1 tsp paprika"></textarea>
+      <label>Method</label><textarea id="method" placeholder="One step per line"></textarea>
+      <label>Notes</label><textarea id="notes" placeholder="Your tweaks, substitutions, cooking notes…" style="min-height:80px"></textarea>
+      <div class="actions"><button type="button" class="secondary" data-close="recipeModal">Cancel</button><button class="primary" type="submit">Save recipe</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="detailModal"><div class="sheet" id="detailSheet"></div></div>
+<div class="toast" id="toast"></div>
+<input class="file-input" id="importFile" type="file" accept="application/json" />
+
+<script>
+const DB_KEY='recipePocket_v1';
+const SHOP_KEY='recipePocket_shop_v1';
+let recipes=JSON.parse(localStorage.getItem(DB_KEY)||'[]');
+let shopping=JSON.parse(localStorage.getItem(SHOP_KEY)||'[]');
+let currentView='recipes';
+let currentDetailId=null;
+
+const $=s=>document.querySelector(s);
+const view=$('#view');
+const toast=$('#toast');
+
+function save(){localStorage.setItem(DB_KEY,JSON.stringify(recipes));localStorage.setItem(SHOP_KEY,JSON.stringify(shopping));}
+function uid(){return (crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2));}
+function esc(s=''){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
+function domain(url){try{return new URL(url).hostname.replace(/^www\./,'')}catch{return ''}}
+function showToast(msg){toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1700)}
+function emojiFor(cat=''){const c=cat.toLowerCase();if(c.includes('bake')||c.includes('cake')||c.includes('dessert'))return'🧁';if(c.includes('break'))return'🍳';if(c.includes('soup'))return'🥣';if(c.includes('pasta'))return'🍝';if(c.includes('chicken'))return'🍗';if(c.includes('fish'))return'🐟';if(c.includes('veg'))return'🥦';return'🍲'}
+
+function render(){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView));
+  $('#recipeToolbar').style.display=(currentView==='recipes'||currentView==='favourites')?'flex':'none';
+  if(currentView==='shopping')return renderShopping();
+  if(currentView==='settings')return renderSettings();
+  renderRecipes();
+}
+
+function updateCategories(){
+  const sel=$('#categoryFilter'), cur=sel.value;
+  const cats=[...new Set(recipes.map(r=>r.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML='<option value="">All</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  if(cats.includes(cur)) sel.value=cur;
+}
+
+function renderRecipes(){
+  updateCategories();
+  const q=$('#searchInput').value.trim().toLowerCase();
+  const cat=$('#categoryFilter').value;
+  let data=recipes.filter(r=>currentView!=='favourites'||r.favourite);
+  data=data.filter(r=>(!cat||r.category===cat)&&(!q||[r.title,r.category,r.notes,domain(r.sourceUrl)].join(' ').toLowerCase().includes(q)));
+  if(!data.length){
+    const fav=currentView==='favourites';
+    view.innerHTML=`<div class="empty"><div class="big">${fav?'♥️':'🍽️'}</div><h2>${fav?'No favourites yet':'No recipes yet'}</h2><p>${fav?'Tap the heart on a recipe to keep it here.':'Save your first recipe from a website.'}</p>${fav?'':'<button class="primary" onclick="openForm()">Add your first recipe</button>'}</div>`;return;
+  }
+  view.innerHTML=`<div class="section-title">${data.length} recipe${data.length===1?'':'s'}</div><div class="grid">${data.map(cardHtml).join('')}</div>`;
+}
+function cardHtml(r){
+  const img=r.imageUrl?`style="background-image:url('${esc(r.imageUrl)}')"`:'';
+  return `<article class="card" onclick="openDetail('${r.id}')"><button class="fav" onclick="event.stopPropagation();toggleFavourite('${r.id}')">${r.favourite?'♥️':'♡'}</button><div class="thumb" ${img}>${r.imageUrl?'':emojiFor(r.category)}</div><div class="card-body"><div class="card-title">${esc(r.title)}</div><div class="meta">${r.category?`<span class="pill">${esc(r.category)}</span>`:''}${r.servings?`<span>${r.servings} servings</span>`:''}${r.sourceUrl?`<span>${esc(domain(r.sourceUrl))}</span>`:''}</div></div></article>`;
+}
+
+function openForm(id=''){
+  const r=recipes.find(x=>x.id===id);
+  $('#formTitle').textContent=r?'Edit recipe':'Add recipe';
+  $('#recipeId').value=r?.id||'';
+  $('#title').value=r?.title||'';$('#sourceUrl').value=r?.sourceUrl||'';$('#category').value=r?.category||'';$('#servings').value=r?.servings||4;$('#imageUrl').value=r?.imageUrl||'';$('#ingredients').value=(r?.ingredients||[]).join('\n');$('#method').value=(r?.method||[]).join('\n');$('#notes').value=r?.notes||'';
+  $('#recipeModal').classList.add('open');setTimeout(()=>$('#title').focus(),100);
+}
+function closeModal(id){$('#'+id).classList.remove('open')}
+
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+$('#addBtn').onclick=()=>openForm();
+$('#recipeForm').addEventListener('submit',e=>{
+  e.preventDefault();const id=$('#recipeId').value;
+  const data={id:id||uid(),title:$('#title').value.trim(),sourceUrl:$('#sourceUrl').value.trim(),category:$('#category').value.trim(),servings:Number($('#servings').value)||1,imageUrl:$('#imageUrl').value.trim(),ingredients:$('#ingredients').value.split('\n').map(x=>x.trim()).filter(Boolean),method:$('#method').value.split('\n').map(x=>x.trim()).filter(Boolean),notes:$('#notes').value.trim(),favourite:recipes.find(r=>r.id===id)?.favourite||false,createdAt:recipes.find(r=>r.id===id)?.createdAt||Date.now(),updatedAt:Date.now()};
+  if(id)recipes=recipes.map(r=>r.id===id?data:r);else recipes.unshift(data);
+  save();closeModal('recipeModal');render();showToast(id?'Recipe updated':'Recipe saved');
+});
+
+function toggleFavourite(id){const r=recipes.find(r=>r.id===id);if(!r)return;r.favourite=!r.favourite;save();render();if(currentDetailId===id)openDetail(id);}
+
+function parseQty(line,factor){
+  if(factor===1)return line;
+  const m=line.match(/^\s*((?:\d+\s+)?\d+\/\d+|\d+(?:\.\d+)?)(.*)$/);if(!m)return line;
+  const s=m[1].trim();let val;
+  if(s.includes(' ')){const [a,b]=s.split(/\s+/);const [n,d]=b.split('/').map(Number);val=Number(a)+n/d}
+  else if(s.includes('/')){const [n,d]=s.split('/').map(Number);val=n/d}else val=Number(s);
+  const out=val*factor;const rounded=Math.round(out*100)/100;return String(rounded).replace(/\.0+$/,'')+m[2];
+}
+function openDetail(id){
+  const r=recipes.find(r=>r.id===id);if(!r)return;currentDetailId=id;
+  const checked=JSON.parse(sessionStorage.getItem('checked_'+id)||'[]');
+  const img=r.imageUrl?`style="background-image:url('${esc(r.imageUrl)}')"`:'';
+  $('#detailSheet').innerHTML=`<div class="grab"></div><div class="sheet-head"><h2>Recipe</h2><button class="close" onclick="closeModal('detailModal')">✕</button></div><div class="detail-top"><div class="detail-img" ${img}>${r.imageUrl?'':emojiFor(r.category)}</div><div><div class="detail-title">${esc(r.title)}</div><div class="meta">${r.category?`<span class="pill">${esc(r.category)}</span>`:''}${r.sourceUrl?`<span>${esc(domain(r.sourceUrl))}</span>`:''}</div>${r.sourceUrl?`<div style="margin-top:9px"><a class="link" target="_blank" rel="noopener" href="${esc(r.sourceUrl)}">Open original recipe ↗</a></div>`:''}</div></div>
+  <div class="detail-tools"><button class="small-btn" onclick="toggleFavourite('${id}')">${r.favourite?'♥ Remove favourite':'♡ Favourite'}</button><button class="small-btn" onclick="openForm('${id}');closeModal('detailModal')">✏️ Edit</button><button class="small-btn" onclick="addAllIngredients('${id}')">🛒 Add all</button><button class="small-btn" onclick="deleteRecipe('${id}')">🗑 Delete</button></div>
+  ${r.servings?`<div class="servings">Servings: <button onclick="changeServings(-1)">−</button><strong id="servingCount">${r.servings}</strong><button onclick="changeServings(1)">＋</button></div>`:''}
+  <div class="detail-section"><h3>Ingredients</h3><div id="ingredientList">${ingredientHtml(r,1,checked)}</div></div>
+  <div class="detail-section"><h3>Method</h3>${r.method.length?r.method.map((s,i)=>`<div class="step"><div class="step-no">${i+1}</div><div>${esc(s)}</div></div>`).join(''):'<p class="sub">No method saved.</p>'}</div>
+  ${r.notes?`<div class="detail-section"><h3>Notes</h3><div class="settings-card" style="margin:0">${esc(r.notes).replace(/\n/g,'<br>')}</div></div>`:''}`;
+  $('#detailModal').classList.add('open');
+}
+function ingredientHtml(r,factor,checked=[]){return r.ingredients.length?r.ingredients.map((x,i)=>`<div class="ingredient ${checked.includes(i)?'checked':''}" id="ing_${i}"><input type="checkbox" ${checked.includes(i)?'checked':''} onchange="toggleIngredient(${i},this.checked)"><div class="ing-text">${esc(parseQty(x,factor))}</div><button class="ing-add" onclick="addToShopping('${encodeURIComponent(x)}')">＋</button></div>`).join(''):'<p class="sub">No ingredients saved.</p>'}
+function toggleIngredient(i,on){let a=JSON.parse(sessionStorage.getItem('checked_'+currentDetailId)||'[]');a=on?[...new Set([...a,i])]:a.filter(x=>x!==i);sessionStorage.setItem('checked_'+currentDetailId,JSON.stringify(a));$('#ing_'+i)?.classList.toggle('checked',on)}
+function changeServings(delta){const r=recipes.find(r=>r.id===currentDetailId);let c=Number($('#servingCount').textContent);c=Math.max(1,c+delta);$('#servingCount').textContent=c;const factor=c/(r.servings||1);const checked=JSON.parse(sessionStorage.getItem('checked_'+r.id)||'[]');$('#ingredientList').innerHTML=ingredientHtml(r,factor,checked)}
+function deleteRecipe(id){if(!confirm('Delete this recipe?'))return;recipes=recipes.filter(r=>r.id!==id);save();closeModal('detailModal');render();showToast('Recipe deleted')}
+function addToShopping(encoded){const text=decodeURIComponent(encoded);shopping.push({id:uid(),text,done:false});save();showToast('Added to shopping list')}
+function addAllIngredients(id){const r=recipes.find(r=>r.id===id);r.ingredients.forEach(text=>shopping.push({id:uid(),text,done:false}));save();showToast('Ingredients added')}
+
+function renderShopping(){
+  view.innerHTML=`<div class="section-title">Shopping list</div>${shopping.length?shopping.map(x=>`<div class="shop-item ${x.done?'done':''}"><input type="checkbox" ${x.done?'checked':''} onchange="toggleShop('${x.id}',this.checked)"><span>${esc(x.text)}</span><button onclick="removeShop('${x.id}')">✕</button></div>`).join(''):'<div class="empty"><div class="big">🛒</div><h2>Your list is empty</h2><p>Add ingredients from any saved recipe.</p></div>'}${shopping.length?'<div class="actions"><button class="secondary" onclick="clearDone()">Clear ticked</button><button class="secondary" onclick="clearAllShop()">Clear all</button></div>':''}`;
+}
+function toggleShop(id,on){const x=shopping.find(x=>x.id===id);if(x)x.done=on;save();renderShopping()}
+function removeShop(id){shopping=shopping.filter(x=>x.id!==id);save();renderShopping()}
+function clearDone(){shopping=shopping.filter(x=>!x.done);save();renderShopping()}
+function clearAllShop(){if(confirm('Clear the whole shopping list?')){shopping=[];save();renderShopping()}}
+
+function renderSettings(){
+  view.innerHTML=`<div class="section-title">Settings</div>
+  <div class="settings-card"><h3>📲 Add to your iPhone Home Screen</h3><p>Open this site in Safari, tap Share, then choose <strong>Add to Home Screen</strong>. It will launch full-screen like an app.</p></div>
+  <div class="settings-card"><h3>🌐 Saving a recipe from a website</h3><p>For this first version, paste the recipe link into “Source website” and copy the ingredients and method into the app. A later version can add automatic webpage importing with a small server component.</p></div>
+  <div class="settings-card"><h3>💾 Backup your recipes</h3><p>Your recipes are stored on this device in your browser. Export a backup occasionally so you can restore them on another device.</p><div class="settings-actions"><button class="secondary" onclick="exportData()">Export backup</button><button class="secondary" onclick="$('#importFile').click()">Import backup</button></div></div>
+  <div class="settings-card"><h3>🧹 Reset app</h3><p>Deletes all recipes and shopping-list items from this browser.</p><div class="settings-actions"><button class="secondary" onclick="resetAll()">Delete all data</button></div></div>`;
+}
+function exportData(){const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),recipes,shopping},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='recipe-pocket-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$('#importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.recipes))throw new Error();recipes=d.recipes;shopping=Array.isArray(d.shopping)?d.shopping:[];save();render();showToast('Backup imported')}catch{alert('That backup file could not be read.')}e.target.value=''});
+function resetAll(){if(!confirm('Delete all recipes and shopping-list items?'))return;recipes=[];shopping=[];save();render();showToast('App reset')}
+
+$('#searchInput').addEventListener('input',renderRecipes);$('#categoryFilter').addEventListener('change',renderRecipes);
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>{currentView=b.dataset.view;render()}));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+render();
+</script>
+</body>
+</html>
